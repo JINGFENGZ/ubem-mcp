@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ubem-analysis": {
+      "command": "python",
+      "args": ["-m", "ubem_analysis_mcp.server"],
+      "env": {
+        "UBEM_PROJECT_ROOT": "/path/to/your/project",
+        "ENERGYPLUS_ROOT": "/path/to/EnergyPlus"
+      },
+      "description": "UBEM Analysis MCP Server for EnergyPlus simulations"
+    }
+  }
+}
+
