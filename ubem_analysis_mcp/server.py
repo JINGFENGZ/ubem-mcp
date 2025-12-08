@@ -54,16 +54,16 @@ This MCP server provides Urban Building Energy Model (UBEM) analysis tools for E
 - **batch_simulate**: Run simulations for multiple buildings
 
 ### 3. Data Analysis
-- **analyze_results**: Analyze and compare simulation results
+- **analyze_results**: Analyse and compare simulation results
 - **generate_hourly_temperatures**: Extract hourly temperature data
 - **create_temperature_comparison**: Create baseline vs modified comparison
 
 ## Typical Workflow:
 
-1. **Analyze Weather**: Identify hottest days from EPW file
+1. **Analyse Weather**: Identify hottest days from EPW file
 2. **Modify IDF**: Create modified building models
 3. **Run Simulations**: Execute baseline and modified scenarios
-4. **Analyze Results**: Extract and compare temperature data
+4. **Analyse Results**: Extract and compare temperature data
 5. **Generate Reports**: Create CSV files for analysis
 
 ## Configuration:
@@ -82,7 +82,7 @@ def analyze_weather_file(
     top_n: int = 3
 ) -> str:
     """
-    Analyze EPW weather file to identify the hottest days.
+    Analyse EPW weather file to identify the hottest days.
     
     Identifies days with highest average dry bulb temperature and finds
     the earliest day among the hottest days.
@@ -245,7 +245,7 @@ def analyze_results(
     temperature_unit: str = 'C'
 ) -> str:
     """
-    Analyze simulation results and calculate temperature statistics.
+    Analyse simulation results and calculate temperature statistics.
     
     Args:
         baseline_results_dir: Directory containing baseline simulation results

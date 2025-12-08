@@ -52,7 +52,7 @@ def analyze_simulation_results(
     temperature_unit: str = 'C'
 ) -> Dict:
     """
-    Analyze simulation results and calculate temperature statistics.
+    Analyse simulation results and calculate temperature statistics.
     
     Args:
         baseline_results_dir: Directory containing baseline simulation results
@@ -218,7 +218,7 @@ def create_comparison_csv(
         Dictionary containing creation status
     """
     try:
-        # Analyze results
+        # Analyse results
         analysis = analyze_simulation_results(
             baseline_results_dir,
             modified_results_dir,

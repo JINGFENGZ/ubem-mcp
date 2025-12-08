@@ -94,7 +94,7 @@ Configure your MCP client (e.g., Claude Desktop):
 
 ### 1. `analyze_weather_file`
 
-Analyze EPW weather file to identify the hottest days.
+Analyse EPW weather file to identify the hottest days.
 
 ### 2. `run_simulation`
 
@@ -106,7 +106,7 @@ Run simulations for multiple buildings.
 
 ### 4. `analyze_results`
 
-Analyze simulation results and calculate statistics.
+Analyse simulation results and calculate statistics.
 
 ### 5. `generate_hourly_temperatures`
 

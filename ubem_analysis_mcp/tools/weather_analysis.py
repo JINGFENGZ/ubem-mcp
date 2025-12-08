@@ -10,7 +10,7 @@ from typing import List, Dict, Tuple, Optional
 
 def analyze_epw_hottest_days(epw_file_path: str, top_n: int = 3) -> Dict:
     """
-    Analyze EPW weather file to identify the hottest days based on daily average dry bulb temperature.
+    Analyse EPW weather file to identify the hottest days based on daily average dry bulb temperature.
     
     Args:
         epw_file_path: Path to the EPW weather file

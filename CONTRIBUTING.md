@@ -10,7 +10,7 @@ Before creating bug reports, please check existing issues. When creating a bug r
 
 - Clear and descriptive title
 - Exact steps to reproduce the problem
-- Expected vs actual behavior
+- Expected vs actual behaviour
 - Your environment (OS, Python version, EnergyPlus version)
 
 ### Suggesting Enhancements
@@ -129,7 +129,7 @@ Example:
 ```
 feat(weather): add support for custom date ranges
 
-Added ability to analyze weather data for specific date ranges.
+Added ability to analyse weather data for specific date ranges.
 
 Closes #123
 ```
