@@ -113,18 +113,22 @@ def analyze_weather_file(
 @mcp.tool()
 def run_simulation(
     idf_path: str,
-    weather_file: Optional[str] = None,
+    weather_file: str,
     output_dir: str = "simulation_output",
-    use_expand_objects: bool = True
+    energyplus_exe: Optional[str] = None,
+    expand_objects_exe: Optional[str] = None,
+    timeout: int = 600
 ) -> str:
     """
     Run EnergyPlus simulation for a single IDF file.
     
     Args:
         idf_path: Path to IDF file
-        weather_file: Path to weather file (default: uses config)
-        output_dir: Output directory for results
-        use_expand_objects: Whether to run ExpandObjects (default: True)
+        weather_file: Path to weather file
+        output_dir: Output directory for results (default: 'simulation_output')
+        energyplus_exe: Path to EnergyPlus executable (default: auto-detect)
+        expand_objects_exe: Path to ExpandObjects executable (default: auto-detect, None to skip)
+        timeout: Simulation timeout in seconds (default: 600)
     
     Returns:
         JSON string containing simulation status
@@ -132,17 +136,28 @@ def run_simulation(
     logger.info(f"Running simulation: {idf_path}")
     
     try:
-        if not weather_file:
-            weather_file = config["weather_file"]
+        # Auto-detect EnergyPlus executable if not provided
+        if not energyplus_exe:
+            from ubem_analysis_mcp.config import get_energyplus_executable
+            energyplus_exe = get_energyplus_executable()
+            if not energyplus_exe:
+                raise FileNotFoundError(
+                    "EnergyPlus executable not found. Please provide energyplus_exe parameter "
+                    "or set ENERGYPLUS_ROOT environment variable."
+                )
         
-        expand_objects_exe = config["expand_objects_exe"] if use_expand_objects else None
+        # Auto-detect ExpandObjects if not explicitly disabled
+        if expand_objects_exe is None:
+            from ubem_analysis_mcp.config import get_expand_objects_executable
+            expand_objects_exe = get_expand_objects_executable()
         
         result = run_energyplus_simulation(
             idf_path,
             weather_file,
             output_dir,
-            config["energyplus_exe"],
-            expand_objects_exe
+            energyplus_exe,
+            expand_objects_exe,
+            timeout
         )
         
         return json.dumps(result, ensure_ascii=False, indent=2)
@@ -160,20 +175,24 @@ def run_simulation(
 @mcp.tool()
 def batch_simulate(
     idf_directory: str,
+    weather_file: str,
     output_base_dir: str,
-    weather_file: Optional[str] = None,
-    use_expand_objects: bool = True,
-    max_buildings: Optional[int] = None
+    energyplus_exe: Optional[str] = None,
+    expand_objects_exe: Optional[str] = None,
+    max_buildings: Optional[int] = None,
+    timeout: int = 600
 ) -> str:
     """
     Run EnergyPlus simulations for multiple buildings.
     
     Args:
         idf_directory: Directory containing IDF files
+        weather_file: Path to weather file
         output_base_dir: Base directory for all outputs
-        weather_file: Path to weather file (default: uses config)
-        use_expand_objects: Whether to run ExpandObjects (default: True)
+        energyplus_exe: Path to EnergyPlus executable (default: auto-detect)
+        expand_objects_exe: Path to ExpandObjects executable (default: auto-detect, None to skip)
         max_buildings: Maximum number of buildings to simulate (optional)
+        timeout: Simulation timeout per building in seconds (default: 600)
     
     Returns:
         JSON string containing batch simulation status
@@ -181,18 +200,29 @@ def batch_simulate(
     logger.info(f"Batch simulating buildings from: {idf_directory}")
     
     try:
-        if not weather_file:
-            weather_file = config["weather_file"]
+        # Auto-detect EnergyPlus executable if not provided
+        if not energyplus_exe:
+            from ubem_analysis_mcp.config import get_energyplus_executable
+            energyplus_exe = get_energyplus_executable()
+            if not energyplus_exe:
+                raise FileNotFoundError(
+                    "EnergyPlus executable not found. Please provide energyplus_exe parameter "
+                    "or set ENERGYPLUS_ROOT environment variable."
+                )
         
-        expand_objects_exe = config["expand_objects_exe"] if use_expand_objects else None
+        # Auto-detect ExpandObjects if not explicitly disabled
+        if expand_objects_exe is None:
+            from ubem_analysis_mcp.config import get_expand_objects_executable
+            expand_objects_exe = get_expand_objects_executable()
         
         result = batch_simulate_buildings(
             idf_directory,
             weather_file,
             output_base_dir,
-            config["energyplus_exe"],
+            energyplus_exe,
             expand_objects_exe,
-            max_buildings
+            max_buildings,
+            timeout
         )
         
         return json.dumps(result, ensure_ascii=False, indent=2)
@@ -209,7 +239,10 @@ def batch_simulate(
 @mcp.tool()
 def analyze_results(
     baseline_results_dir: str,
-    modified_results_dir: Optional[str] = None
+    modified_results_dir: Optional[str] = None,
+    output_csv_name: str = 'eplusout.csv',
+    temperature_column_pattern: str = 'Zone Mean Air Temperature',
+    temperature_unit: str = 'C'
 ) -> str:
     """
     Analyze simulation results and calculate temperature statistics.
@@ -217,6 +250,10 @@ def analyze_results(
     Args:
         baseline_results_dir: Directory containing baseline simulation results
         modified_results_dir: Directory containing modified results (optional)
+        output_csv_name: Name of the output CSV file (default: 'eplusout.csv')
+        temperature_column_pattern: Pattern to match temperature columns 
+                                   (default: 'Zone Mean Air Temperature')
+        temperature_unit: Temperature unit for display (default: 'C')
     
     Returns:
         JSON string containing analysis results
@@ -226,7 +263,10 @@ def analyze_results(
     try:
         result = analyze_simulation_results(
             baseline_results_dir,
-            modified_results_dir
+            modified_results_dir,
+            output_csv_name,
+            temperature_column_pattern,
+            temperature_unit
         )
         
         return json.dumps(result, ensure_ascii=False, indent=2)
@@ -243,17 +283,24 @@ def analyze_results(
 @mcp.tool()
 def generate_hourly_temperatures(
     results_dir: str,
-    output_csv: str
+    output_csv: str,
+    output_csv_name: str = 'eplusout.csv',
+    temperature_column_pattern: str = 'Zone Mean Air Temperature',
+    time_column_name: str = 'Hour'
 ) -> str:
     """
     Generate hourly temperature CSV from simulation results.
     
     Creates a CSV file with hourly temperatures for all buildings.
-    Each row represents an hour (8760 total), each column a building.
+    Each row represents an hour (typically 8760), each column a building.
     
     Args:
         results_dir: Directory containing simulation results
         output_csv: Output CSV file path
+        output_csv_name: Name of the output CSV file (default: 'eplusout.csv')
+        temperature_column_pattern: Pattern to match temperature columns 
+                                   (default: 'Zone Mean Air Temperature')
+        time_column_name: Name of the time column in output (default: 'Hour')
     
     Returns:
         JSON string containing generation status
@@ -261,7 +308,13 @@ def generate_hourly_temperatures(
     logger.info(f"Generating hourly temperatures CSV: {output_csv}")
     
     try:
-        result = generate_hourly_csv(results_dir, output_csv)
+        result = generate_hourly_csv(
+            results_dir, 
+            output_csv,
+            output_csv_name,
+            temperature_column_pattern,
+            time_column_name
+        )
         return json.dumps(result, ensure_ascii=False, indent=2)
         
     except Exception as e:
@@ -278,7 +331,10 @@ def generate_hourly_temperatures(
 def create_temperature_comparison(
     baseline_results_dir: str,
     modified_results_dir: str,
-    output_csv: str
+    output_csv: str,
+    output_csv_name: str = 'eplusout.csv',
+    temperature_column_pattern: str = 'Zone Mean Air Temperature',
+    temperature_unit: str = 'C'
 ) -> str:
     """
     Create comparison CSV between baseline and modified scenarios.
@@ -290,6 +346,10 @@ def create_temperature_comparison(
         baseline_results_dir: Directory containing baseline results
         modified_results_dir: Directory containing modified results
         output_csv: Output CSV file path
+        output_csv_name: Name of the output CSV file (default: 'eplusout.csv')
+        temperature_column_pattern: Pattern to match temperature columns 
+                                   (default: 'Zone Mean Air Temperature')
+        temperature_unit: Temperature unit for display (default: 'C')
     
     Returns:
         JSON string containing creation status
@@ -300,7 +360,10 @@ def create_temperature_comparison(
         result = create_comparison_csv(
             baseline_results_dir,
             modified_results_dir,
-            output_csv
+            output_csv,
+            output_csv_name,
+            temperature_column_pattern,
+            temperature_unit
         )
         
         return json.dumps(result, ensure_ascii=False, indent=2)

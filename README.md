@@ -10,9 +10,20 @@
 
 - **Weather Analysis**: Identify hottest days from EPW weather files
 - **Batch Simulation**: Run EnergyPlus simulations for multiple buildings efficiently
-- **Data Extraction**: Extract zone temperatures and energy metrics
+- **Data Extraction**: Extract zone temperatures and energy metrics from any output variable
 - **Scenario Comparison**: Compare baseline vs modified HVAC scenarios
+- **Fully Configurable**: All parameters exposed, minimal hardcoding
 - **MCP Integration**: Standard MCP protocol for LLM integration
+
+## 🎯 Design Philosophy
+
+This MCP server is designed to be **maximally flexible and minimally opinionated**:
+
+- ✅ **No hardcoded paths**: All directories and files specified by user
+- ✅ **Configurable variables**: Extract any output variable, not just temperature
+- ✅ **Auto-detection**: EnergyPlus installation auto-detected when possible
+- ✅ **Optional parameters**: Sensible defaults, override anything
+- ✅ **Universal applicability**: Works with any EnergyPlus project structure
 
 ## 📋 Installation
 
@@ -32,14 +43,15 @@ pip install -e .
 
 ## ⚡ Quick Start
 
-### 1. Configure Paths
+### 1. Set EnergyPlus Path (Optional)
 
-Set environment variables or edit `ubem_analysis_mcp/config.py`:
+The server auto-detects common EnergyPlus installation locations. If needed, set:
 
 ```bash
-export UBEM_PROJECT_ROOT="/path/to/your/project"
 export ENERGYPLUS_ROOT="/path/to/EnergyPlus"
 ```
+
+**Note**: No project-specific configuration required! All paths are passed as tool parameters.
 
 ### 2. Run the MCP Server
 
@@ -58,9 +70,21 @@ Configure your MCP client (e.g., Claude Desktop):
       "command": "python",
       "args": ["-m", "ubem_analysis_mcp.server"],
       "env": {
-        "UBEM_PROJECT_ROOT": "/path/to/your/project",
         "ENERGYPLUS_ROOT": "/path/to/EnergyPlus"
       }
+    }
+  }
+}
+```
+
+**Or let it auto-detect:**
+
+```json
+{
+  "mcpServers": {
+    "ubem-analysis": {
+      "command": "python",
+      "args": ["-m", "ubem_analysis_mcp.server"]
     }
   }
 }
