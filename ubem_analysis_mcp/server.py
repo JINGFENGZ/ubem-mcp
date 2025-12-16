@@ -21,6 +21,10 @@ from ubem_analysis_mcp.tools.data_analysis import (
     generate_hourly_csv,
     create_comparison_csv
 )
+from ubem_analysis_mcp.tools.idf_modification import (
+    modify_idf_hvac_schedule,
+    batch_modify_idf_hvac_schedule
+)
 from ubem_analysis_mcp.config import get_config
 
 # Initialize FastMCP server
@@ -49,11 +53,15 @@ This MCP server provides Urban Building Energy Model (UBEM) analysis tools for E
 ### 1. Weather Analysis
 - **analyze_weather_file**: Identify hottest days from EPW weather data
 
-### 2. Simulation Tools  
+### 2. IDF Modification
+- **modify_idf_hvac**: Modify single IDF file HVAC schedule
+- **batch_modify_idf_hvac**: Batch modify multiple IDF files
+
+### 3. Simulation Tools  
 - **run_simulation**: Run EnergyPlus simulation for a single building
 - **batch_simulate**: Run simulations for multiple buildings
 
-### 3. Data Analysis
+### 4. Data Analysis
 - **analyze_results**: Analyse and compare simulation results
 - **generate_hourly_temperatures**: Extract hourly temperature data
 - **create_temperature_comparison**: Create baseline vs modified comparison
@@ -61,7 +69,7 @@ This MCP server provides Urban Building Energy Model (UBEM) analysis tools for E
 ## Typical Workflow:
 
 1. **Analyse Weather**: Identify hottest days from EPW file
-2. **Modify IDF**: Create modified building models
+2. **Modify IDF Files**: Automatically modify HVAC schedules for outage scenarios
 3. **Run Simulations**: Execute baseline and modified scenarios
 4. **Analyse Results**: Extract and compare temperature data
 5. **Generate Reports**: Create CSV files for analysis
@@ -374,6 +382,157 @@ def create_temperature_comparison(
             "success": False,
             "error": str(e),
             "output_file": output_csv
+        }
+        return json.dumps(error_result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def modify_idf_hvac(
+    idf_path: str,
+    output_path: str,
+    schedule_action: str = "disable_cooling",
+    start_month: int = 7,
+    start_day: int = 15,
+    end_month: Optional[int] = None,
+    end_day: Optional[int] = None,
+    schedule_name: Optional[str] = None,
+    idd_file: Optional[str] = None,
+    target_version: str = "25.1.0"
+) -> str:
+    """
+    Modify IDF file HVAC schedule to simulate blackout or outage scenarios.
+    
+    Creates or modifies a schedule that controls HVAC system availability,
+    useful for simulating power outages during extreme weather events.
+    
+    Args:
+        idf_path: Path to the source IDF file
+        output_path: Path where the modified IDF will be saved
+        schedule_action: Type of HVAC modification:
+            - "disable_cooling": Disable cooling systems (default)
+            - "disable_heating": Disable heating systems
+            - "disable_all": Disable all HVAC systems
+            - "enable_all": Enable all HVAC systems
+        start_month: Month when the schedule change begins (1-12, default: 7)
+        start_day: Day when the schedule change begins (1-31, default: 15)
+        end_month: Month when the schedule change ends (optional, None means until end of year)
+        end_day: Day when the schedule change ends (optional)
+        schedule_name: Custom name for the created schedule (optional)
+        idd_file: Path to Energy+.idd file (default: auto-detect)
+        target_version: EnergyPlus version to set in the IDF file (default: 25.1.0)
+    
+    Returns:
+        JSON string containing modification status and details
+    """
+    logger.info(f"Modifying IDF file: {idf_path}")
+    
+    try:
+        # Auto-detect IDD file if not provided
+        if not idd_file:
+            from ubem_analysis_mcp.config import get_idd_file
+            idd_file = get_idd_file()
+            if not idd_file:
+                raise FileNotFoundError(
+                    "IDD file not found. Please provide idd_file parameter "
+                    "or set ENERGYPLUS_ROOT environment variable."
+                )
+        
+        result = modify_idf_hvac_schedule(
+            idf_path=idf_path,
+            output_path=output_path,
+            idd_file=idd_file,
+            schedule_action=schedule_action,
+            start_month=start_month,
+            start_day=start_day,
+            end_month=end_month,
+            end_day=end_day,
+            schedule_name=schedule_name,
+            target_version=target_version
+        )
+        
+        return json.dumps(result, ensure_ascii=False, indent=2)
+        
+    except Exception as e:
+        logger.error(f"Error modifying IDF: {e}")
+        error_result = {
+            "success": False,
+            "error": str(e),
+            "idf_file": idf_path,
+            "output_file": output_path
+        }
+        return json.dumps(error_result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def batch_modify_idf_hvac(
+    idf_directory: str,
+    output_directory: str,
+    schedule_action: str = "disable_cooling",
+    start_month: int = 7,
+    start_day: int = 15,
+    end_month: Optional[int] = None,
+    end_day: Optional[int] = None,
+    schedule_name: Optional[str] = None,
+    idd_file: Optional[str] = None,
+    target_version: str = "25.1.0",
+    max_buildings: Optional[int] = None
+) -> str:
+    """
+    Batch modify multiple IDF files to simulate blackout scenarios.
+    
+    Processes all IDF files in a directory and applies HVAC schedule
+    modifications to simulate power outages during extreme weather events.
+    
+    Args:
+        idf_directory: Directory containing IDF files to modify
+        output_directory: Directory where modified IDF files will be saved
+        schedule_action: Type of HVAC modification (see modify_idf_hvac)
+        start_month: Month when the schedule change begins (1-12, default: 7)
+        start_day: Day when the schedule change begins (1-31, default: 15)
+        end_month: Month when the schedule change ends (optional)
+        end_day: Day when the schedule change ends (optional)
+        schedule_name: Custom name for the created schedule (optional)
+        idd_file: Path to Energy+.idd file (default: auto-detect)
+        target_version: EnergyPlus version to set in the IDF files (default: 25.1.0)
+        max_buildings: Maximum number of buildings to process (optional, for testing)
+    
+    Returns:
+        JSON string containing batch modification status
+    """
+    logger.info(f"Batch modifying IDF files from: {idf_directory}")
+    
+    try:
+        # Auto-detect IDD file if not provided
+        if not idd_file:
+            from ubem_analysis_mcp.config import get_idd_file
+            idd_file = get_idd_file()
+            if not idd_file:
+                raise FileNotFoundError(
+                    "IDD file not found. Please provide idd_file parameter "
+                    "or set ENERGYPLUS_ROOT environment variable."
+                )
+        
+        result = batch_modify_idf_hvac_schedule(
+            idf_directory=idf_directory,
+            output_directory=output_directory,
+            idd_file=idd_file,
+            schedule_action=schedule_action,
+            start_month=start_month,
+            start_day=start_day,
+            end_month=end_month,
+            end_day=end_day,
+            schedule_name=schedule_name,
+            target_version=target_version,
+            max_buildings=max_buildings
+        )
+        
+        return json.dumps(result, ensure_ascii=False, indent=2)
+        
+    except Exception as e:
+        logger.error(f"Error in batch IDF modification: {e}")
+        error_result = {
+            "success": False,
+            "error": str(e)
         }
         return json.dumps(error_result, ensure_ascii=False, indent=2)
 

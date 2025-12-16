@@ -174,3 +174,4 @@ def batch_simulate_buildings(
             "error": str(e)
         }
 
+

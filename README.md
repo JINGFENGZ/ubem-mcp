@@ -9,6 +9,7 @@
 ## 🌟 Features
 
 - **Weather Analysis**: Identify hottest days from EPW weather files
+- **IDF Modification**: Automatically modify HVAC schedules for outage scenarios
 - **Batch Simulation**: Run EnergyPlus simulations for multiple buildings efficiently
 - **Data Extraction**: Extract zone temperatures and energy metrics from any output variable
 - **Scenario Comparison**: Compare baseline vs modified HVAC scenarios
@@ -96,29 +97,86 @@ Configure your MCP client (e.g., Claude Desktop):
 
 Analyse EPW weather file to identify the hottest days.
 
-### 2. `run_simulation`
+### 2. `modify_idf_hvac`
+
+Modify single IDF file HVAC schedule to simulate blackout scenarios.
+
+### 3. `batch_modify_idf_hvac`
+
+Batch modify multiple IDF files to create modified scenario models.
+
+### 4. `run_simulation`
 
 Run EnergyPlus simulation for a single building.
 
-### 3. `batch_simulate`
+### 5. `batch_simulate`
 
 Run simulations for multiple buildings.
 
-### 4. `analyze_results`
+### 6. `analyze_results`
 
 Analyse simulation results and calculate statistics.
 
-### 5. `generate_hourly_temperatures`
+### 7. `generate_hourly_temperatures`
 
 Generate hourly temperature CSV from simulation results.
 
-### 6. `create_temperature_comparison`
+### 8. `create_temperature_comparison`
 
 Create comparison CSV between baseline and modified scenarios.
 
 ## 📖 Usage Examples
 
-### Weather Analysis
+### Complete Workflow: Extreme Heat & Outage Resilience Assessment
+
+```python
+from ubem_analysis_mcp.tools.weather_analysis import analyze_epw_hottest_days
+from ubem_analysis_mcp.tools.idf_modification import batch_modify_idf_hvac_schedule
+from ubem_analysis_mcp.tools.simulation_tools import batch_simulate_buildings
+from ubem_analysis_mcp.tools.data_analysis import create_comparison_csv
+
+# Step 1: Find hottest days
+weather_result = analyze_epw_hottest_days("weather/Shanghai.epw", top_n=3)
+hottest_day = weather_result["earliest_hot_day"]
+start_month = hottest_day["month"]
+start_day = hottest_day["day"]
+print(f"HVAC outage will start from: {start_month:02d}/{start_day:02d}")
+
+# Step 2: Create modified IDF files (simulate cooling outage)
+modify_result = batch_modify_idf_hvac_schedule(
+    idf_directory="baseline_models",
+    output_directory="modified_models",
+    idd_file="/path/to/Energy+.idd",
+    schedule_action="disable_cooling",
+    start_month=start_month,
+    start_day=start_day
+)
+print(f"Modified {modify_result['successful_modifications']} IDF files")
+
+# Step 3: Run baseline simulations
+baseline_result = batch_simulate_buildings(
+    idf_directory="baseline_models",
+    weather_file="weather/Shanghai.epw",
+    output_base_dir="results/baseline"
+)
+
+# Step 4: Run modified simulations
+modified_result = batch_simulate_buildings(
+    idf_directory="modified_models",
+    weather_file="weather/Shanghai.epw",
+    output_base_dir="results/modified"
+)
+
+# Step 5: Create comparison report
+comparison_result = create_comparison_csv(
+    baseline_results_dir="results/baseline",
+    modified_results_dir="results/modified",
+    output_csv="temperature_comparison.csv"
+)
+print(f"Mean temperature increase: {comparison_result['statistics']['mean_increase']:.2f}°C")
+```
+
+### Weather Analysis Only
 
 ```python
 from ubem_analysis_mcp.tools.weather_analysis import analyze_epw_hottest_days
@@ -128,17 +186,19 @@ if result["success"]:
     print(f"Hottest day: {result['earliest_hot_day']['date']}")
 ```
 
-### Batch Simulations
+### IDF Modification Only
 
 ```python
-from ubem_analysis_mcp.tools.simulation_tools import batch_simulate_buildings
+from ubem_analysis_mcp.tools.idf_modification import modify_idf_hvac_schedule
 
-result = batch_simulate_buildings(
-    idf_directory="baseline_models",
-    weather_file="weather.epw",
-    output_base_dir="simulation_results",
-    energyplus_exe="/path/to/energyplus",
-    max_buildings=10  # Optional: limit for testing
+# Disable cooling from July 15 onwards
+result = modify_idf_hvac_schedule(
+    idf_path="baseline_model.idf",
+    output_path="modified_model.idf",
+    idd_file="/path/to/Energy+.idd",
+    schedule_action="disable_cooling",
+    start_month=7,
+    start_day=15
 )
 ```
 
