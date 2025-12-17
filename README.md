@@ -259,7 +259,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Status
 
-This project is actively maintained. Current version: **1.1.0**
+This project is actively maintained. Current version: **1.2.0**
 
 ---
 
