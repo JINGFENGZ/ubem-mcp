@@ -97,6 +97,8 @@ Configure your MCP client (e.g., Claude Desktop):
 
 Analyse EPW weather file to identify the hottest days.
 
+**Enhanced with 9 Tools Total**
+
 ### 2. `modify_idf_hvac`
 
 Modify single IDF file HVAC schedule to simulate blackout scenarios.

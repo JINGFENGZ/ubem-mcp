@@ -25,6 +25,12 @@ from ubem_analysis_mcp.tools.idf_modification import (
     modify_idf_hvac_schedule,
     batch_modify_idf_hvac_schedule
 )
+from ubem_analysis_mcp.tools.thermal_comfort_analysis import (
+    load_hourly_temperature_data,
+    analyse_comfort_thresholds,
+    generate_comfort_visualisations,
+    generate_comfort_report
+)
 from ubem_analysis_mcp.config import get_config
 
 # Initialize FastMCP server
@@ -530,6 +536,130 @@ def batch_modify_idf_hvac(
         
     except Exception as e:
         logger.error(f"Error in batch IDF modification: {e}")
+        error_result = {
+            "success": False,
+            "error": str(e)
+        }
+        return json.dumps(error_result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def analyse_thermal_comfort(
+    baseline_csv: str,
+    modified_csv: str,
+    output_dir: str,
+    event_start_hour: int,
+    event_name: str = "Event",
+    building_type_map: Optional[str] = None,
+    comfort_thresholds: Optional[str] = None,
+    generate_visualisations: bool = True
+) -> str:
+    """
+    Analyse thermal comfort impact by comparing baseline and modified scenarios.
+    
+    Compares hourly zone temperature data between baseline and modified scenarios,
+    analyses comfort threshold breaches, and generates visualisation charts.
+    
+    Args:
+        baseline_csv: Path to baseline hourly temperature CSV file
+        modified_csv: Path to modified hourly temperature CSV file
+        output_dir: Directory for output files (figures and reports)
+        event_start_hour: Hour when the event starts (e.g., 4681 for July 15)
+        event_name: Name of the event (e.g., "Heatwave", "Power Outage")
+        building_type_map: Optional JSON string of building type mapping
+                          e.g., '{"0": "Lowrise_Domestic", "1": "Midrise_Domestic", ...}'
+        comfort_thresholds: Optional JSON string of comfort thresholds in °C
+                           e.g., '{"comfort_limit": 26, "acceptable_limit": 28, ...}'
+        generate_visualisations: Whether to generate visualisation charts (default: True)
+    
+    Returns:
+        JSON string with analysis results including statistics and file paths
+    
+    Example:
+        analyse_thermal_comfort(
+            baseline_csv="baseline_temps.csv",
+            modified_csv="modified_temps.csv",
+            output_dir="./comfort_analysis",
+            event_start_hour=4681,
+            event_name="Heatwave",
+            generate_visualisations=True
+        )
+    """
+    try:
+        logger.info(f"Analysing thermal comfort: {baseline_csv} vs {modified_csv}")
+        
+        # Parse optional parameters
+        bldg_type_map = None
+        if building_type_map:
+            bldg_type_map = json.loads(building_type_map)
+        
+        thresholds = None
+        if comfort_thresholds:
+            thresholds = json.loads(comfort_thresholds)
+        
+        # Load data
+        baseline_df, modified_df, building_cols, building_labels = load_hourly_temperature_data(
+            baseline_file=baseline_csv,
+            modified_file=modified_csv,
+            building_type_map=bldg_type_map
+        )
+        
+        logger.info(f"Loaded data: {len(baseline_df)} hours, {len(building_cols)} buildings")
+        
+        # Analyse comfort thresholds
+        threshold_results = analyse_comfort_thresholds(
+            baseline_df=baseline_df,
+            modified_df=modified_df,
+            building_cols=building_cols,
+            start_hour=event_start_hour,
+            thresholds=thresholds
+        )
+        
+        logger.info("Comfort threshold analysis complete")
+        
+        # Generate visualisations if requested
+        vis_files = {}
+        if generate_visualisations:
+            vis_files = generate_comfort_visualisations(
+                baseline_df=baseline_df,
+                modified_df=modified_df,
+                building_cols=building_cols,
+                building_labels=building_labels,
+                start_hour=event_start_hour,
+                output_dir=output_dir,
+                event_name=event_name
+            )
+            logger.info(f"Generated {len(vis_files)} visualisation files")
+        
+        # Generate report
+        report_file = str(Path(output_dir) / f'thermal_comfort_report_{event_name.lower().replace(" ", "_")}.txt')
+        summary = generate_comfort_report(
+            baseline_df=baseline_df,
+            modified_df=modified_df,
+            building_cols=building_cols,
+            start_hour=event_start_hour,
+            threshold_results=threshold_results,
+            output_file=report_file,
+            event_name=event_name
+        )
+        
+        logger.info(f"Report generated: {report_file}")
+        
+        # Combine results
+        result = {
+            "success": True,
+            "num_buildings": len(building_cols),
+            "event_start_hour": event_start_hour,
+            "event_name": event_name,
+            "summary": summary,
+            "visualisation_files": vis_files,
+            "output_directory": output_dir
+        }
+        
+        return json.dumps(result, ensure_ascii=False, indent=2)
+        
+    except Exception as e:
+        logger.error(f"Error in thermal comfort analysis: {e}")
         error_result = {
             "success": False,
             "error": str(e)

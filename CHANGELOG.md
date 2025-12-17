@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-17
+
+### Added
+- **Thermal Comfort Analysis Tool** (`analyse_thermal_comfort`)
+  - Comprehensive comfort impact assessment
+  - Compares baseline vs modified temperature scenarios
+  - Analyses comfort threshold breaches (comfort limit, health risk, severe risk)
+  - Generates professional visualisation charts with Times New Roman font
+  - Creates detailed assessment reports with statistics
+  - Supports custom building type mappings
+  - Fully configurable comfort thresholds
+  - Building type categorisation in heatmaps
+- New module: `ubem_analysis_mcp/tools/thermal_comfort_analysis.py`
+- Example: `examples/thermal_comfort_example.py`
+- Visualisation outputs:
+  - Time series comparison (annual and event period)
+  - Temperature difference plots
+  - Building-level heatmaps with type grouping
+  - Automatic white separation lines between building types
+
+### Changed
+- Updated `server.py` to include thermal comfort analysis MCP tool
+- Enhanced README with thermal comfort analysis documentation
+- Improved chart styling with consistent Times New Roman font
+
+### Fixed
+- Building type labels now only shown at first occurrence in heatmaps
+- Proper handling of large CSV files with thousands of hourly data points
+
 ## [1.1.0] - 2025-12-16
 
 ### Added
