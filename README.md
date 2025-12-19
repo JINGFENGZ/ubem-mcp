@@ -8,7 +8,7 @@
 
 ## 🌟 Features
 
-- **Weather Analysis**: Identify hottest days from EPW weather files
+- **Weather Analysis**: Identify hottest **consecutive** days sequence from EPW weather files
 - **IDF Modification**: Automatically modify HVAC schedules for outage scenarios
 - **Batch Simulation**: Run EnergyPlus simulations for multiple buildings efficiently
 - **Data Extraction**: Extract zone temperatures and energy metrics from any output variable
@@ -95,9 +95,7 @@ Configure your MCP client (e.g., Claude Desktop):
 
 ### 1. `analyze_weather_file`
 
-Analyse EPW weather file to identify the hottest days.
-
-**Enhanced with 9 Tools Total**
+Analyse EPW weather file to identify the hottest **consecutive N-day sequence** based on average daily temperature.
 
 ### 2. `modify_idf_hvac`
 
@@ -137,12 +135,12 @@ from ubem_analysis_mcp.tools.idf_modification import batch_modify_idf_hvac_sched
 from ubem_analysis_mcp.tools.simulation_tools import batch_simulate_buildings
 from ubem_analysis_mcp.tools.data_analysis import create_comparison_csv
 
-# Step 1: Find hottest days
+# Step 1: Find hottest consecutive 3-day sequence
 weather_result = analyze_epw_hottest_days("weather/Shanghai.epw", top_n=3)
-hottest_day = weather_result["earliest_hot_day"]
+hottest_day = weather_result["earliest_hot_day"]  # First day of the sequence
 start_month = hottest_day["month"]
 start_day = hottest_day["day"]
-print(f"HVAC outage will start from: {start_month:02d}/{start_day:02d}")
+print(f"HVAC outage will start from: {start_month:02d}/{start_day:02d} (Day 1 of heatwave)")
 
 # Step 2: Create modified IDF files (simulate cooling outage)
 modify_result = batch_modify_idf_hvac_schedule(
@@ -259,7 +257,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Status
 
-This project is actively maintained. Current version: **1.2.0**
+This project is actively maintained. Current version: **1.1.0**
 
 ---
 

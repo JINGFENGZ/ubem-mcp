@@ -5,34 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-12-17
-
-### Added
-- **Thermal Comfort Analysis Tool** (`analyse_thermal_comfort`)
-  - Comprehensive comfort impact assessment
-  - Compares baseline vs modified temperature scenarios
-  - Analyses comfort threshold breaches (comfort limit, health risk, severe risk)
-  - Generates professional visualisation charts with Times New Roman font
-  - Creates detailed assessment reports with statistics
-  - Supports custom building type mappings
-  - Fully configurable comfort thresholds
-  - Building type categorisation in heatmaps
-- New module: `ubem_analysis_mcp/tools/thermal_comfort_analysis.py`
-- Example: `examples/thermal_comfort_example.py`
-- Visualisation outputs:
-  - Time series comparison (annual and event period)
-  - Temperature difference plots
-  - Building-level heatmaps with type grouping
-  - Automatic white separation lines between building types
-
-### Changed
-- Updated `server.py` to include thermal comfort analysis MCP tool
-- Enhanced README with thermal comfort analysis documentation
-- Improved chart styling with consistent Times New Roman font
+## [1.2.0] - 2025-12-19
 
 ### Fixed
-- Building type labels now only shown at first occurrence in heatmaps
-- Proper handling of large CSV files with thousands of hourly data points
+- **CRITICAL**: Weather analysis now correctly identifies **consecutive hottest N-day sequences** instead of non-consecutive hottest days
+  - Previous behaviour: Selected top N hottest days regardless of whether they were consecutive
+  - New behaviour: Uses sliding window to find the N consecutive days with highest average temperature
+  - This ensures heatwave simulations represent realistic continuous extreme weather events
+  - Added verification in test suite to confirm consecutive days
+
+### Enhanced
+- `analyze_epw_hottest_days()` now returns:
+  - `consecutive_days`: Number of consecutive days in the sequence
+  - `sequence_average_temperature`: Average temperature across the entire sequence
+  - Updated description field to clarify "First day of hottest N consecutive days sequence"
+- Improved documentation in README to emphasise consecutive day detection
+- Added comprehensive test script `test_consecutive_hottest_days.py` with verification
+
+### Technical
+- Implemented sliding window algorithm for consecutive day detection
+- Day-of-year verification to ensure no gaps in sequence
+- Maintained backward compatibility with existing API
 
 ## [1.1.0] - 2025-12-16
 

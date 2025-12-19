@@ -10,17 +10,19 @@ from typing import List, Dict, Tuple, Optional
 
 def analyze_epw_hottest_days(epw_file_path: str, top_n: int = 3) -> Dict:
     """
-    Analyse EPW weather file to identify the hottest days based on daily average dry bulb temperature.
+    Analyse EPW weather file to identify the hottest consecutive days sequence based on daily average dry bulb temperature.
+    
+    This function finds the consecutive N-day period with the highest average temperature across the year.
     
     Args:
         epw_file_path: Path to the EPW weather file
-        top_n: Number of hottest days to identify (default: 3)
+        top_n: Number of consecutive days in the heatwave (default: 3)
         
     Returns:
-        Dictionary containing hottest days information including:
+        Dictionary containing hottest consecutive days information including:
         - success: bool
-        - top_hottest_days: List of hottest days with temperature data
-        - earliest_hot_day: Earliest day among the hottest days
+        - top_hottest_days: List of consecutive hottest days with temperature data
+        - earliest_hot_day: The first day of the hottest consecutive sequence
     """
     try:
         # Read EPW data (skip first 8 header lines)
@@ -52,27 +54,62 @@ def analyze_epw_hottest_days(epw_file_path: str, top_n: int = 3) -> Dict:
             daily_avg[date_key] = np.mean(temps)
             daily_max[date_key] = np.max(temps)
         
-        # Sort by average temperature
-        sorted_days = sorted(daily_avg.items(), key=lambda x: x[1], reverse=True)
-        
-        # Get top N hottest days
-        hottest_days = sorted_days[:top_n]
-        
-        # Find the earliest day among the hottest days
+        # Convert to day-of-year based list for consecutive search
         def to_day_of_year(month, day):
             days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
             return sum(days_in_month[:month-1]) + day
         
-        hottest_dates = [(m, d) for (m, d), _ in hottest_days]
-        hottest_doy = [(to_day_of_year(m, d), m, d) for m, d in hottest_dates]
-        hottest_doy.sort()
+        def from_day_of_year(doy):
+            days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+            month = 1
+            remaining = doy
+            for i, days in enumerate(days_in_month):
+                if remaining <= days:
+                    return (i + 1, remaining)
+                remaining -= days
+                month += 1
+            return (12, 31)  # fallback
         
-        earliest_month, earliest_day = hottest_doy[0][1], hottest_doy[0][2]
+        # Create ordered list of all days with temperatures
+        all_days = []
+        for (month, day), avg_temp in daily_avg.items():
+            doy = to_day_of_year(month, day)
+            all_days.append((doy, month, day, avg_temp, daily_max[(month, day)]))
+        all_days.sort()
+        
+        # Find consecutive N days with highest average temperature
+        best_avg = -999
+        best_start_idx = 0
+        
+        for i in range(len(all_days) - top_n + 1):
+            # Check if these are consecutive days
+            is_consecutive = True
+            for j in range(top_n - 1):
+                if all_days[i + j + 1][0] != all_days[i + j][0] + 1:
+                    is_consecutive = False
+                    break
+            
+            if is_consecutive:
+                # Calculate average temperature of this consecutive sequence
+                avg_temp = np.mean([all_days[i + j][3] for j in range(top_n)])
+                if avg_temp > best_avg:
+                    best_avg = avg_temp
+                    best_start_idx = i
+        
+        # Extract the hottest consecutive days
+        hottest_days = []
+        for j in range(top_n):
+            doy, month, day, avg_temp, max_temp = all_days[best_start_idx + j]
+            hottest_days.append(((month, day), avg_temp))
+        
+        # The earliest day is the first day of the sequence
+        earliest_month, earliest_day = hottest_days[0][0]
         
         # Prepare result
         result = {
             "success": True,
             "epw_file": epw_file_path,
+            "consecutive_days": top_n,
             "top_hottest_days": [
                 {
                     "rank": i + 1,
@@ -88,8 +125,9 @@ def analyze_epw_hottest_days(epw_file_path: str, top_n: int = 3) -> Dict:
                 "month": int(earliest_month),
                 "day": int(earliest_day),
                 "date": f"{earliest_month:02d}/{earliest_day:02d}",
-                "description": "Earliest day among the top hottest days"
-            }
+                "description": f"First day of the hottest {top_n} consecutive days sequence"
+            },
+            "sequence_average_temperature": float(best_avg)
         }
         
         return result
