@@ -37,7 +37,7 @@ This MCP server is designed to be **maximally flexible and minimally opinionated
 ### Install from Source
 
 ```bash
-git clone https://github.com/JINGFENGZ/ubem-mcp
+git clone https://github.com/UBEM-MCP/ubem-mcp-opensource
 cd ubem-mcp
 pip install -e .
 ```
@@ -218,7 +218,7 @@ Or edit `ubem_analysis_mcp/config.py` directly.
 ### Setup Development Environment
 
 ```bash
-git clone https://github.com/JINGFENGZ/ubem-mcp
+git clone https://github.com/UBEM-MCP/ubem-mcp-opensource
 cd ubem-mcp
 pip install -e ".[dev]"
 ```
@@ -252,8 +252,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Support
 
-- **Issues**: https://github.com/JINGFENGZ/ubem-mcp/issues
-- **Discussions**: https://github.com/JINGFENGZ/ubem-mcp/discussions
+- **Issues**: https://github.com/UBEM-MCP/ubem-mcp-opensource/issues
+- **Discussions**: https://github.com/UBEM-MCP/ubem-mcp-opensource/discussions
 
 ## 📊 Project Status
 

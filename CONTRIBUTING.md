@@ -36,7 +36,7 @@ Enhancement suggestions are tracked as GitHub issues. Include:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/JINGFENGZ/ubem-mcp
+git clone https://github.com/UBEM-MCP/ubem-mcp-opensource
 cd ubem-mcp
 ```
 

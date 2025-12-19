@@ -31,9 +31,9 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/JINGFENGZ/ubem-mcp"
-Documentation = "https://github.com/JINGFENGZ/ubem-mcp/blob/main/README.md"
-"Bug Tracker" = "https://github.com/JINGFENGZ/ubem-mcp/issues"
+Repository = "https://github.com/UBEM-MCP/ubem-mcp-opensource"
+Documentation = "https://github.com/UBEM-MCP/ubem-mcp-opensource/blob/main/README.md"
+"Bug Tracker" = "https://github.com/UBEM-MCP/ubem-mcp-opensource/issues"
 
 [project.scripts]
 ubem-mcp = "ubem_analysis_mcp.server:main"
