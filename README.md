@@ -8,7 +8,7 @@
 
 ## 🌟 Features
 
-- **Weather Analysis**: Identify hottest **consecutive** days sequence from EPW weather files
+- **Weather Analysis**: Identify hottest consecutive days sequence from EPW weather files
 - **IDF Modification**: Automatically modify HVAC schedules for outage scenarios
 - **Batch Simulation**: Run EnergyPlus simulations for multiple buildings efficiently
 - **Data Extraction**: Extract zone temperatures and energy metrics from any output variable
